@@ -1,27 +1,28 @@
 import { useLoaderData } from "react-router";
 import { useState } from "react";
 import { getDB } from "~/db/getDB";
+import CalendarComponent from "~/components/CalendarComponent";
 
 export async function loader() {
   const db = await getDB();
   const timesheetsAndEmployees = await db.all(
-    "SELECT timesheets.*, employees.full_name, employees.id AS employee_id FROM timesheets JOIN employees ON timesheets.employee_id = employees.id"
+    "SELECT timesheets.id AS id, timesheets.start_time AS start, timesheets.end_time AS end, employees.full_name, employees.id AS employee_id FROM timesheets JOIN employees ON timesheets.employee_id = employees.id"
   );
-
   return { timesheetsAndEmployees };
 }
 
 export default function TimesheetsPage() {
   const { timesheetsAndEmployees } = useLoaderData();
+  const [calendarView,setCalendarView] = useState(false);
 
   return (
     <div>
       <div>
-        <button>Table View</button>
-        <button>Calendar View</button>
+        <button onClick={()=>setCalendarView(false)}>Table View</button>
+        <button onClick={()=>setCalendarView(true)}>Calendar View</button>
       </div>
       {/* Replace `true` by a variable that is changed when the view buttons are clicked */}
-      {true ? (
+      {!calendarView ? (
         <div>
           {timesheetsAndEmployees.map((timesheet: any) => (
             <div key={timesheet.id}>
@@ -29,8 +30,11 @@ export default function TimesheetsPage() {
                 <li>Timesheet #{timesheet.id}</li>
                 <ul>
                   <li>Employee: {timesheet.full_name} (ID: {timesheet.employee_id})</li>
-                  <li>Start Time: {timesheet.start_time}</li>
-                  <li>End Time: {timesheet.end_time}</li>
+                  <li>Start Time: {timesheet.start}</li>
+                  <li>End Time: {timesheet.end}</li>
+                  <li>
+                  <a href={`/timesheets/${timesheet.id}`}>Edit</a>
+                </li>
                 </ul>
               </ul>
             </div>
@@ -38,9 +42,7 @@ export default function TimesheetsPage() {
         </div>
       ) : (
         <div>
-          <p>
-            To implement, see <a href="https://schedule-x.dev/docs/frameworks/react">Schedule X React documentation</a>.
-          </p>
+        <CalendarComponent  events={timesheetsAndEmployees} />
         </div>
       )}
       <hr />
